@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiAlertCircle, FiImage, FiUsers, FiDollarSign, FiFileText, FiExternalLink } from 'react-icons/fi';
+import { FiAlertCircle, FiImage, FiUsers, FiDollarSign, FiFileText, FiExternalLink, FiLink } from 'react-icons/fi';
 import { getColorCode } from '../utils';
 
 const SalesTable = ({
@@ -13,9 +13,13 @@ const SalesTable = ({
   currentPage,
   setCurrentPage,
   totalItems,
-  itemsPerPage
+  itemsPerPage = 100 // enforce 100 items/page by default
 }) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  // Apply pagination slice
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const pagedData = data.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <>
@@ -82,7 +86,7 @@ const SalesTable = ({
                 </td>
               </tr>
             ) : (
-              data.map((row, i) => (
+              pagedData.map((row, i) => (
                 <tr key={i}>
                   <td className="image-cell">
                     {row.IMAGE ? (
@@ -117,33 +121,42 @@ const SalesTable = ({
                   <td>
                     <div className="color-cell">
                       {row["COLOUR"] && (
-                        <span 
-                          className="color-dot" 
+                        <span
+                          className="color-dot"
                           style={{ backgroundColor: getColorCode(row["COLOUR"]) }}
                         ></span>
                       )}
                       {row["COLOUR"]}
                     </div>
                   </td>
-                  <td className="price-cell">{formatCurrency(row["PRICE"])}</td>
+                  {/* PRICE column changed to green + bold as requested */}
+                  <td className="price-cell" style={{ color: 'green', fontWeight: 'bold' }}>
+                    {formatCurrency(row["PRICE"])}
+                  </td>
                   <td className="bold-cell">{row["TOTAL UNITS"]}</td>
                   <td className="nowrap">{formatDate(row["XFACT DD"])}</td>
                   <td className="nowrap">{formatDate(row["REAL DD"])}</td>
                   <td>
                     <span className="status-text" data-status={row["LIVE STATUS"]}>{row["LIVE STATUS"]}</span>
                   </td>
+                  {/* CMT PRICE with green text + link icon */}
                   <td className="price-cell nowrap bold-cell">
                     {row["COSTING LINKS"] ? (
-                      <a 
-                        href={row["COSTING LINKS"]} 
-                        target="_blank" 
+                      <a
+                        href={row["COSTING LINKS"]}
+                        target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: 'inherit' }}
+                        style={{ color: 'green', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}
+                        title="Open costing link"
                       >
                         {formatCurrency(row["CMT PRICE"])}
+                        <FiLink size={14} />
                       </a>
                     ) : (
-                      formatCurrency(row["CMT PRICE"])
+                      <span style={{ color: 'green', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                        {formatCurrency(row["CMT PRICE"])}
+                        <FiLink size={14} />
+                      </span>
                     )}
                   </td>
                   <td className="price-cell">{formatCurrency(row["ACTUAL CMT"])}</td>

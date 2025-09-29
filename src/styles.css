@@ -595,6 +595,20 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Green inline link style for table cells */
+.link-green {
+  color: #10B981 !important;     /* Tailwind "emerald-500" */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-green:hover {
+  text-decoration: underline;
+}
+
 
 /* New sizes table layout */
 .sizes-table {

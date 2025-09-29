@@ -15,6 +15,10 @@ const DevelopmentsTable = ({
 }) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
+  // Apply pagination slice
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const pagedData = data.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <>
       <div className="table-container">
@@ -55,7 +59,7 @@ const DevelopmentsTable = ({
                 </td>
               </tr>
             ) : (
-              data.map((row, i) => (
+              pagedData.map((row, i) => (
                 <tr key={i}>
                   <td className="nowrap">{formatDate(row["Timestamp"])}</td>
                   <td className="highlight-cell">{row["H-NUMBER"]}</td>
@@ -144,19 +148,24 @@ const DevelopmentsTable = ({
                     )}
                   </td>
                   <td>{row["FIT SAMPLE"] || "N/A"}</td>
-                  <td className="price-cell nowrap bold-cell">{formatCurrency(row["CMT PRICE"])}</td>
+                  <td className="price-cell nowrap bold-cell" style={{ color: 'green', fontWeight: 'bold' }}>{formatCurrency(row["CMT PRICE"])}</td>
                   <td className="price-cell nowrap bold-cell">
                     {row["COSTING LINK"] ? (
-                      <a 
-                        href={row["COSTING LINK"]} 
-                        target="_blank" 
+                      <a
+                        href={row["COSTING LINK"]}
+                        target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: 'inherit' }}
+                        style={{ color: 'green', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}
+                        title="Open costing link"
                       >
-                        {formatCurrency(row["TOTAL GARMENT PRICE"])}
+                        {formatCurrency(row["TOTAL GARMENT PRICE"]) }
+                        <span aria-hidden="true" style={{ fontSize: 12 }}>🔗</span>
                       </a>
                     ) : (
-                      formatCurrency(row["TOTAL GARMENT PRICE"])
+                      <span style={{ color: 'green', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                        {formatCurrency(row["TOTAL GARMENT PRICE"]) }
+                        <span aria-hidden="true" style={{ fontSize: 12 }}>🔗</span>
+                      </span>
                     )}
                   </td>
                 </tr>

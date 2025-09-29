@@ -1,5 +1,4 @@
-// firebase.js - Firebase v9 modular upgrade
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
@@ -14,12 +13,23 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Avoid double-init in Vite HMR
+const createApp = (name, config) => {
+  const existingApp = getApps().find(app => app.name === name);
+  return existingApp || initializeApp(config, name);
+};
 
-// Export services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+// HIGH5 Firebase app and services
+export const appHigh5 = createApp("high5-app", firebaseConfig);
+export const authHigh5 = getAuth(appHigh5);
+export const dbHigh5 = getFirestore(appHigh5);
+export const storageHigh5 = getStorage(appHigh5);
 
-export default app;
+// PD & KAIIA Firebase app and services
+export const appPdKaiia = createApp("pd-kaiia-app", firebaseConfig);
+export const authPdKaiia = getAuth(appPdKaiia);
+export const dbPdKaiia = getFirestore(appPdKaiia);
+export const storagePdKaiia = getStorage(appPdKaiia);
+
+// Default export for backward compatibility
+export default appHigh5;

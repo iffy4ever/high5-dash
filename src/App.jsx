@@ -1,7 +1,6 @@
-// src/App.jsx
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
-import { Routes, Route, Navigate, BrowserRouter as Router } from "react-router-dom";
+import { Routes, Route, Navigate, BrowserRouter as Router, useLocation } from "react-router-dom";
 import ReactDOMServer from "react-dom/server";
 import {
   FiDownload,
@@ -13,7 +12,7 @@ import {
   FiArrowUp,
   FiAlertCircle,
 } from "react-icons/fi";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import SalesTable from "./components/SalesTable";
 import FabricTable from "./components/FabricTable";
@@ -23,6 +22,7 @@ import CuttingSheet from "./components/CuttingSheet";
 import StatsPanel from "./components/StatsPanel";
 import CustomerPage from "./components/CustomerPage";
 import Login from "./components/Login";
+import LoginPD from "./components/LoginPD";
 
 import {
   formatDate,
@@ -35,10 +35,10 @@ import {
 } from "./utils";
 
 import { useData } from "./useData";
-import "./firebase";
+import { authHigh5, authPdKaiia } from "./firebase";
 import "./styles.css";
 
-// Debounce function to reduce re-renders
+// Debounce function
 const debounce = (func, delay) => {
   let timeoutId;
   return (...args) => {
@@ -47,21 +47,48 @@ const debounce = (func, delay) => {
   };
 };
 
+// Error Boundary for PD route
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  
+  componentDidCatch(error, info) {
+    console.error("PD ErrorBoundary caught:", error, info);
+  }
+  
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 16, background: "#fee2e2", color: "#991b1b", borderRadius: 8, margin: "8px 16px" }}>
+          <strong>PD component error:</strong> {this.state.error?.message || String(this.state.error)}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Protected Route Component
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ auth, children, loginPath }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
-      setUser(user);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setChecking(false);
     });
-
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
-  if (loading) {
+  if (checking) {
     return (
       <div className="app-container light" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="loading-content">
@@ -72,7 +99,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return user ? children : <Navigate to="/login" replace />;
+  return user ? children : <Navigate to={loginPath} replace state={{ from: location }} />;
 };
 
 function App() {
@@ -95,10 +122,9 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 100; // Set to 100 items per page
-  const [isVisible, setIsVisible] = useState(false); // State for scroll button visibility
+  const itemsPerPage = 100;
+  const [isVisible, setIsVisible] = useState(false);
 
-  // Debounced search handler
   const debouncedSetSearch = useRef(debounce((value) => setSearch(value), 300)).current;
 
   const colors = useMemo(() => darkMode ? {
@@ -161,25 +187,23 @@ function App() {
     statCardBorder: "#E5E7EB",
   }, [darkMode]);
 
-  // productionStats calculation
   const productionStats = useMemo(() => {
     if (!data.sales_po || !data.fabric) return {};
     
-    const today = new Date(); // Use dynamic date in production
-    const fiscalYearStart = new Date(today.getFullYear(), 6, 1); // July 1, 2025
-    const lastFiscalYearStart = new Date(today.getFullYear() - 1, 6, 1); // July 1, 2024
-    const lastFiscalYearEnd = new Date(today.getFullYear(), 5, 30); // June 30, 2025
-    const twoYearsAgoStart = new Date(today.getFullYear() - 2, 6, 1); // July 1, 2023
-    const twoYearsAgoEnd = new Date(today.getFullYear() - 1, 5, 30); // June 30, 2024
+    const today = new Date();
+    const fiscalYearStart = new Date(today.getFullYear(), 6, 1);
+    const lastFiscalYearStart = new Date(today.getFullYear() - 1, 6, 1);
+    const lastFiscalYearEnd = new Date(today.getFullYear(), 5, 30);
+    const twoYearsAgoStart = new Date(today.getFullYear() - 2, 6, 1);
+    const twoYearsAgoEnd = new Date(today.getFullYear() - 1, 5, 30);
     const oneMonthAgo = new Date(today);
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-    // Quarterly ranges for last 4 quarters
     const quarterlyRanges = [
-      { quarter: 'Q4 2024', start: new Date(2024, 9, 1), end: new Date(2024, 11, 31) }, // Oct-Dec 2024
-      { quarter: 'Q1 2025', start: new Date(2025, 0, 1), end: new Date(2025, 2, 31) }, // Jan-Mar 2025
-      { quarter: 'Q2 2025', start: new Date(2025, 3, 1), end: new Date(2025, 5, 30) }, // Apr-Jun 2025
-      { quarter: 'Q3 2025', start: new Date(2025, 6, 1), end: new Date(2025, 8, 30) }, // Jul-Sep 2025
+      { quarter: 'Q4 2024', start: new Date(2024, 9, 1), end: new Date(2024, 11, 31) },
+      { quarter: 'Q1 2025', start: new Date(2025, 0, 1), end: new Date(2025, 2, 31) },
+      { quarter: 'Q2 2025', start: new Date(2025, 3, 1), end: new Date(2025, 5, 30) },
+      { quarter: 'Q3 2025', start: new Date(2025, 6, 1), end: new Date(2025, 8, 30) },
     ];
 
     const stats = {
@@ -195,7 +219,6 @@ function App() {
           return row["LIVE STATUS"] === "DELIVERED" && date >= oneMonthAgo.getTime();
         })
         .reduce((sum, row) => sum + parseInt(row["TOTAL UNITS"] || 0, 10), 0),
-      // Quarterly units
       ...quarterlyRanges.reduce((acc, range) => {
         acc[`${range.quarter.replace(' ', '')}Units`] = data.sales_po
           .filter(row => {
@@ -250,7 +273,6 @@ function App() {
     return stats;
   }, [data.sales_po, data.fabric]);
 
-  // Preload images when data changes
   useEffect(() => {
     if (data.sales_po) {
       const salesImages = data.sales_po.map(row => row.IMAGE).filter(Boolean);
@@ -267,11 +289,9 @@ function App() {
     }
   }, [data]);
 
-  // Handle scroll to show/hide button
   useEffect(() => {
     const handleScroll = () => {
-      console.log("Scroll Y:", window.scrollY); // Debug scroll position
-      setIsVisible(window.scrollY > 50); // Lower threshold to 50px
+      setIsVisible(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -297,7 +317,7 @@ function App() {
       url: "/pd-kaiia",
       icon: <FiUsers size={16} />,
       color: colors.accent,
-      external: true
+      external: false
     }
   ], [colors]);
 
@@ -468,7 +488,6 @@ function App() {
     printWindow.print();
   }, [selectedPOs, data.sales_po]);
 
-  // Scroll to top function
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -477,11 +496,12 @@ function App() {
     <Router>
       <div className={`app-container ${darkMode ? 'dark' : 'light'}`} style={{ minHeight: '100vh', flex: 1 }}>
         <Routes>
+          {/* HIGH5 auth flow */}
           <Route path="/login" element={<Login />} />
           <Route
             path="/"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute auth={authHigh5} loginPath="/login">
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                   {loading && (
                     <div className="loading-screen">
@@ -512,8 +532,8 @@ function App() {
                               <a
                                 key={i}
                                 href={link.url}
-                                target={link.external ? "_blank" : "_self"}
-                                rel={link.external ? "noopener noreferrer" : undefined}
+                                target={link.label === "PD & KAIIA Dashboard" ? "_blank" : "_self"}
+                                rel="noopener noreferrer"
                                 className="form-link"
                                 style={{ color: link.color }}
                               >
@@ -559,7 +579,7 @@ function App() {
                             {darkMode ? 'Light Mode' : 'Dark Mode'}
                           </button>
                           <button
-                            onClick={() => getAuth().signOut()}
+                            onClick={() => signOut(authHigh5)}
                             className="action-button logout-button"
                           >
                             Logout
@@ -722,7 +742,7 @@ function App() {
                                     placeholder="Enter PO Numbers e.g., PO0004 PO0001,PO0002"
                                     rows={1}
                                     className="filter-select"
-                                    style={{ width: '100', height: '40px', overflow: 'hidden' }}
+                                    style={{ width: '100%', height: '40px', overflow: 'hidden' }}
                                   />
                                 </div>
                                 <div className="po-buttons" style={{ display: 'flex', gap: '0.75rem' }}>
@@ -783,11 +803,30 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* PD & KAIIA auth flow */}
+          <Route path="/pd-kaiia/login" element={<LoginPD />} />
           <Route
             path="/pd-kaiia"
             element={
-              <ProtectedRoute>
-                <CustomerPage />
+              <ProtectedRoute auth={authPdKaiia} loginPath="/pd-kaiia/login">
+                <div className="app-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <h1 className="app-title">PD & KAIIA Dashboard</h1>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <a href="/" className="form-link" style={{ color: "#6366F1" }}>Back to HIGH5</a>
+                    <button onClick={() => signOut(authPdKaiia)} className="action-button logout-button">
+                      Logout
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ padding: "8px 16px", color: "#2563eb" }}>
+                  PD route mounted. If it goes blank below, CustomerPage threw an error.
+                </div>
+
+                <ErrorBoundary>
+                  <CustomerPage auth={authPdKaiia} itemsPerPage={100} />
+                </ErrorBoundary>
               </ProtectedRoute>
             }
           />
