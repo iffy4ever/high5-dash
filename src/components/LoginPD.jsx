@@ -1,3 +1,4 @@
+// src/components/LoginPD.jsx
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -13,14 +14,14 @@ const LoginPD = () => {
 
   const allowedEmails = [
     "developments@high5clothing.co.uk",
-    "sales@high5clothing.co.uk",
+    "sales@high5clothing.co.uk"
     // Add more PD/KAIIA authorized emails here
   ];
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    
+
     const normalizedEmail = email.toLowerCase().trim();
     if (!allowedEmails.includes(normalizedEmail)) {
       setError("Access denied: Email not authorized for PD & KAIIA dashboard");
@@ -33,23 +34,35 @@ const LoginPD = () => {
       navigate(redirectTo, { replace: true });
     } catch (err) {
       console.error("PD Login error:", err);
-      setError(`Login failed: ${err.code === 'auth/wrong-password' ? 'Invalid credentials' : err.message}`);
+      setError(
+        `Login failed: ${
+          err.code === "auth/wrong-password" ? "Invalid credentials" : err.message
+        }`
+      );
     }
   };
 
   return (
-    <div className="app-container light" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div
+      className="app-container light"
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+    >
       <div className="login-container">
         <h2 className="login-title">PD & KAIIA Dashboard Login</h2>
         <form onSubmit={handleLogin} className="login-form">
           <div className="login-field">
             <label htmlFor="email">Email Address</label>
-            <input 
-              id="email" 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
               className="login-input"
               placeholder="Enter your email"
             />

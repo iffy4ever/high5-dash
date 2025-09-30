@@ -14,29 +14,43 @@ const Login = () => {
 
   const allowedEmails = [
     "sales@high5clothing.co.uk",
-    "developments@high5clothing.co.uk",
+    "developments@high5clothing.co.uk"
     // Add HIGH5 dashboard users here
   ];
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    const normalizedEmail = email.toLowerCase();
+
+    const normalizedEmail = email.toLowerCase().trim();
     if (!allowedEmails.includes(normalizedEmail)) {
-      setError("Access denied: Email not authorized for HIGH5");
+      setError("Access denied: Email not authorized for HIGH5 dashboard");
       return;
     }
+
     try {
       await signInWithEmailAndPassword(authHigh5, email, "High54ever");
       const redirectTo = location.state?.from?.pathname || "/";
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(`Login failed: ${err.code}`);
+      setError(
+        `Login failed: ${
+          err.code === "auth/wrong-password" ? "Invalid credentials" : err.message
+        }`
+      );
     }
   };
 
   return (
-    <div className="app-container light" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div
+      className="app-container light"
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+    >
       <div className="login-container">
         <h2 className="login-title">High5 Dashboard Login</h2>
         <form onSubmit={handleLogin} className="login-form">
@@ -58,7 +72,9 @@ const Login = () => {
               <p>{error}</p>
             </div>
           )}
-          <button type="submit" className="action-button login-button">Login</button>
+          <button type="submit" className="action-button login-button">
+            Login
+          </button>
         </form>
       </div>
     </div>
