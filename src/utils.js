@@ -29,21 +29,35 @@ export const getDateValue = (value) => {
   return isNaN(date.getTime()) ? 0 : date.getTime();
 };
 
+/**
+ * ✅ Safe Google Drive thumbnail URL for <img src=...>
+ * Falls back to /fallback-image.png if invalid
+ */
 export const getGoogleDriveThumbnail = (url) => {
-  if (!url) return "";
+  if (!url) return "/fallback-image.png";
   try {
-    const fileId = url.match(/\/file\/d\/([^/]+)/)?.[1] || url.match(/id=([^&]+)/)?.[1];
+    // extract fileId from share link or direct id
+    const fileId =
+      url.match(/\/file\/d\/([^/]+)/)?.[1] ||
+      url.match(/id=([^&]+)/)?.[1] ||
+      (/^[\w-]{25,}$/.test(url) ? url : null);
+
     if (!fileId) {
       console.warn("No valid file ID found in URL:", url);
-      return "";
+      return "/fallback-image.png";
     }
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+
+    // return embeddable image (no CORS issues)
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
   } catch (e) {
     console.error("Error generating thumbnail URL:", e);
-    return "";
+    return "/fallback-image.png";
   }
 };
 
+/**
+ * Format value into £ currency
+ */
 export const formatCurrency = (value) => {
   if (!value) return "£0.00";
   const number = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, "")) : value;
@@ -78,11 +92,17 @@ export const getColorCode = (color) => {
   return "#7C3AED";
 };
 
-// ✅ Added missing exports
+/**
+ * ✅ Safe Google Drive download link
+ */
 export const getGoogleDriveDownloadLink = (url) => {
   if (!url) return "";
   try {
-    const fileId = url.match(/\/file\/d\/([^/]+)/)?.[1] || url.match(/id=([^&]+)/)?.[1];
+    const fileId =
+      url.match(/\/file\/d\/([^/]+)/)?.[1] ||
+      url.match(/id=([^&]+)/)?.[1] ||
+      (/^[\w-]{25,}$/.test(url) ? url : null);
+
     if (!fileId) {
       console.warn("No valid file ID found in URL:", url);
       return "";
@@ -94,12 +114,15 @@ export const getGoogleDriveDownloadLink = (url) => {
   }
 };
 
+/**
+ * Preload thumbnails into browser cache
+ */
 export const preloadImages = (urls) => {
   if (!Array.isArray(urls)) return;
   urls.forEach(url => {
     if (url) {
       const img = new Image();
-      img.src = url;
+      img.src = getGoogleDriveThumbnail(url);
     }
   });
 };
