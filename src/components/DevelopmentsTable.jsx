@@ -1,6 +1,6 @@
 // src/components/DevelopmentsTable.js
 import React from 'react';
-import { FiAlertCircle, FiImage, FiDollarSign } from 'react-icons/fi';
+import { FiAlertCircle, FiImage, FiDollarSign, FiLink } from 'react-icons/fi';
 
 const DevelopmentsTable = ({
   data,
@@ -148,23 +148,29 @@ const DevelopmentsTable = ({
                     )}
                   </td>
                   <td>{row["FIT SAMPLE"] || "N/A"}</td>
-                  <td className="price-cell nowrap bold-cell" style={{ color: 'green', fontWeight: 'bold' }}>{formatCurrency(row["CMT PRICE"])}</td>
-                  <td className="price-cell nowrap bold-cell">
+                  {/* CMT PRICE with link icon - GREEN TEXT */}
+                  <td className="price-cell nowrap bold-cell" style={{ color: 'green', fontWeight: 'bold' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      {formatCurrency(row["CMT PRICE"])}
+                      <FiLink size={14} />
+                    </span>
+                  </td>
+                  {/* TOTAL GARMENT PRICE with link icon - GREEN TEXT */}
+                  <td className="price-cell nowrap bold-cell" style={{ color: 'green', fontWeight: 'bold' }}>
                     {row["COSTING LINK"] ? (
                       <a
                         href={row["COSTING LINK"]}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: 'green', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}
-                        title="Open costing link"
+                        style={{ color: 'green', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                       >
-                        {formatCurrency(row["TOTAL GARMENT PRICE"]) }
-                        <span aria-hidden="true" style={{ fontSize: 12 }}>🔗</span>
+                        {formatCurrency(row["TOTAL GARMENT PRICE"])}
+                        <FiLink size={14} />
                       </a>
                     ) : (
-                      <span style={{ color: 'green', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
-                        {formatCurrency(row["TOTAL GARMENT PRICE"]) }
-                        <span aria-hidden="true" style={{ fontSize: 12 }}>🔗</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        {formatCurrency(row["TOTAL GARMENT PRICE"])}
+                        <FiLink size={14} />
                       </span>
                     )}
                   </td>

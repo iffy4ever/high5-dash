@@ -810,19 +810,9 @@ function App() {
             path="/pd-kaiia"
             element={
               <ProtectedRoute auth={authPdKaiia} loginPath="/pd-kaiia/login">
-                <div className="app-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h1 className="app-title">PD & KAIIA Dashboard</h1>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <a href="/" className="form-link" style={{ color: "#6366F1" }}>Back to HIGH5</a>
-                    <button onClick={() => signOut(authPdKaiia)} className="action-button logout-button">
-                      Logout
-                    </button>
-                  </div>
-                </div>
+                
 
-                <div style={{ padding: "8px 16px", color: "#2563eb" }}>
-                  PD route mounted. If it goes blank below, CustomerPage threw an error.
-                </div>
+          
 
                 <ErrorBoundary>
                   <CustomerPage auth={authPdKaiia} itemsPerPage={100} />

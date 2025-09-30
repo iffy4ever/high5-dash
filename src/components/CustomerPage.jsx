@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { FiSearch, FiAlertCircle, FiShoppingBag, FiExternalLink } from 'react-icons/fi';
+import { FiSearch, FiAlertCircle } from 'react-icons/fi';
 import { useData } from '../useData';
-import { getGoogleDriveThumbnail, formatDate, getDateValue, formatCurrency } from "../utils";
+import { getGoogleDriveThumbnail, formatDate, formatCurrency } from "../utils";
 import '../styles.css';
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { Navigate } from "react-router-dom";
 
-// Updated ProtectedRoute to accept auth prop
+// Protected Route Component
 const ProtectedRoute = ({ auth, children }) => {
   const [user, setUser] = React.useState(null);
   const [loadingAuth, setLoadingAuth] = React.useState(true);
@@ -83,10 +83,21 @@ const CustomerPage = ({ auth }) => {
     (activeTab === "sales" ? filteredSales.length : filteredDevelopments.length) / itemsPerPage
   );
 
+  // Handle logout
+  const handleLogout = () => {
+    if (auth) {
+      signOut(auth).catch(error => {
+        console.error("Logout error:", error);
+      });
+    }
+  };
+
   return (
     <ProtectedRoute auth={auth}>
       <div className={`app-container ${darkMode ? 'dark' : 'light'}`}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          
+          {/* ✅ Single clean header with logout button */}
           <header className="app-header">
             <div className="header-left">
               <h1 className="app-title">PD & KAIIA Dashboard</h1>
@@ -103,7 +114,7 @@ const CustomerPage = ({ auth }) => {
                       className={`tab-button ${activeTab === tab.key ? 'active' : ''}`}
                       onClick={() => {
                         setActiveTab(tab.key);
-                        setCurrentPage(1); // reset to page 1 when switching tabs
+                        setCurrentPage(1);
                       }}
                     >
                       {tab.label}
@@ -118,6 +129,12 @@ const CustomerPage = ({ auth }) => {
                 className="action-button dark-mode-toggle"
               >
                 {darkMode ? 'Light Mode' : 'Dark Mode'}
+              </button>
+              <button
+                onClick={handleLogout}
+                className="action-button logout-button"
+              >
+                Logout
               </button>
             </div>
           </header>
@@ -222,7 +239,7 @@ const CustomerPage = ({ auth }) => {
                           { label: "BACK IMAGE" },
                           { label: "SIDE IMAGE" },
                           { label: "FIT SAMPLE" },
-                          { label: "TOTAL GARMENT PRICE" } // CMT PRICE removed as requested
+                          { label: "TOTAL GARMENT PRICE" }
                         ].map((header, index) => (
                           <th key={index}>
                             <div className="header-content">{header.label}</div>
@@ -319,8 +336,7 @@ const CustomerPage = ({ auth }) => {
                               )}
                             </td>
                             <td>{row["FIT SAMPLE"] || "N/A"}</td>
-                            {/* CMT PRICE removed, TOTAL GARMENT PRICE made plain text (no link) */}
-                            <td className="price-cell nowrap bold-cell">
+                            <td className="price-cell nowrap bold-cell" style={{ color: '#10B981', fontWeight: 'bold' }}>
                               {formatCurrency(row["TOTAL GARMENT PRICE"])}
                             </td>
                           </tr>
@@ -334,7 +350,7 @@ const CustomerPage = ({ auth }) => {
                     <thead>
                       <tr>
                         {[
-                          { label: "IMAGE" },           // added
+                          { label: "IMAGE" },
                           { label: "FIT STATUS" },
                           { label: "H-NUMBER" },
                           { label: "CUSTOMER NAME" },
@@ -345,7 +361,7 @@ const CustomerPage = ({ auth }) => {
                           { label: "XFACT DD" },
                           { label: "REAL DD" },
                           { label: "LIVE STATUS" },
-                          { label: "PRICE" }            // PRICE instead of TOTAL GARMENT PRICE
+                          { label: "PRICE" }
                         ].map((header, index) => (
                           <th key={index}>
                             <div className="header-content">{header.label}</div>
@@ -367,7 +383,6 @@ const CustomerPage = ({ auth }) => {
                       ) : (
                         pageSales.map((row, i) => (
                           <tr key={i}>
-                            {/* IMAGE column - use same product-image class as other tabs */}
                             <td className="image-cell">
                               {row.IMAGE ? (
                                 <div>
@@ -384,7 +399,6 @@ const CustomerPage = ({ auth }) => {
                                 <div className="no-image">No Image</div>
                               )}
                             </td>
-
                             <td>
                               <span className="status-text" data-status={row["FIT STATUS"]}>{row["FIT STATUS"]}</span>
                             </td>
@@ -399,9 +413,7 @@ const CustomerPage = ({ auth }) => {
                             <td>
                               <span className="status-text" data-status={row["LIVE STATUS"]}>{row["LIVE STATUS"]}</span>
                             </td>
-
-                            {/* PRICE column (not Total Garment Price) */}
-                            <td className="price-cell">
+                            <td className="price-cell" style={{ color: '#10B981', fontWeight: 'bold' }}>
                               {formatCurrency(row["PRICE"])}
                             </td>
                           </tr>
